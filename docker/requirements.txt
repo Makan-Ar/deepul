@@ -1,0 +1,13 @@
+# generic packages
+numpy
+matplotlib
+pandas
+openpyxl
+scikit-learn
+scipy
+python-dotenv
+tqdm
+
+# notebooks
+notebook
+jupyterlab

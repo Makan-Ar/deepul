@@ -1,0 +1,21 @@
+version: "3.9"
+
+services:
+  deepul:
+    build:
+        context: .  # will look for a Dockerfile under this directory
+    container_name: deepul
+    shm_size: '16gb'  #  Set for pytorch dataloader shared memory
+    stdin_open: true # docker run -i
+    tty: true        # docker run -t
+    restart: always
+    ports:
+      - "8188:8888"  # mapping host port 8088 to container port 8888 for jupyter
+    network_mode: "bridge"
+    expose: 
+        - "8888"  # exposing port 8888 of the container to the host
+    volumes:
+        - "/home/makan/Documents/projects/deepul:/home/appuser/code"
+    runtime: nvidia
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=all
