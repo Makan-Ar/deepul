@@ -214,7 +214,8 @@ class Trainer:
 		model: nn.Module,
 		train_loader: torch.utils.data.DataLoader,
 		dev_loader: torch.utils.data.DataLoader, 
-		optimizer: torch.optim.Optimizer, 
+		optimizer: torch.optim.Optimizer,
+		test_loader: torch.utils.data.DataLoader=None, 
 		lr_scheduler: torch.optim.lr_scheduler=None,
 		early_stopping: EarlyStopping=None,
 		grad_clip: float=None,
@@ -231,6 +232,8 @@ class Trainer:
 			train_loader (torch.utils.data.DataLoader): training dataset
 			dev_loader (torch.utils.data.DataLoader): development dataset
 			optimizer (torch.optim.Optimizer): an instance of a gradient descent optimizer
+			test_loader (torch.utils.data.DataLoader, optional): test dataset. To be used for tracking loss on 
+				test dataset. Defaults to None.
 			lr_scheduler (torch.optim.lr_scheduler): an instance of a gradient descent optimizer. Defaults to None.
 			early_stopping (EarlyStopping, optional): an instance of EarlyStopping. Defaults to None.
 			grad_clip (float, optional): max norm of the gradients to be clipped. If None, no clipping
@@ -250,6 +253,7 @@ class Trainer:
 		self._train_loader = train_loader
 		self._dev_loader = dev_loader
 		self._optimizer = optimizer
+		self._test_loader = test_loader
 		self._lr_scheduler = lr_scheduler
 		self._early_stopping = early_stopping
 		self._grad_clip = grad_clip
@@ -280,6 +284,7 @@ class Trainer:
 
 		self.train_metrics = defaultdict(list)
 		self.dev_metrics = defaultdict(list)
+		self.test_metrics = defaultdict(list)
 
 	def _train_single_epoch(
 		self,
@@ -404,6 +409,12 @@ class Trainer:
 				dev_pref_report.append(f'{metric_name}: {metric_value:.3e}')
 			dev_pref_report = 'Dev ' + ' - '.join(dev_pref_report)
 
+			# track epoch test metrics if test loader is provided
+			if self._test_loader is not None:
+				test_epoch_metrics = evaluate(self._model, self._test_loader)
+				for metric_name, metric_value in test_epoch_metrics.items():
+					self.test_metrics[metric_name].append(metric_value)
+
 			# add info on best performing metrics
 			best_arg_func = np.argmin if self._mode == 'min' else np.argmax
 			arg_best_dev_loss = best_arg_func(self.dev_metrics['loss'])
@@ -424,6 +435,10 @@ class Trainer:
 
 			with open(path.join(self._store_model_path, 'dev_metrics.pckl'), 'wb') as fp:
 				pickle.dump(self.dev_metrics, fp, protocol=pickle.HIGHEST_PROTOCOL)
+
+			if self._test_loader is not None:
+				with open(path.join(self._store_model_path, 'test_metrics.pckl'), 'wb') as fp:
+					pickle.dump(self.test_metrics, fp, protocol=pickle.HIGHEST_PROTOCOL)
 		return
 	
 	def get_best_model_path(self) -> str:
