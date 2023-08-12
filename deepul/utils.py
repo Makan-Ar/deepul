@@ -1,5 +1,5 @@
 import os
-from os.path import join, dirname, exists
+from os.path import join, dirname, exists, abspath
 import matplotlib.pyplot as plt
 import numpy as np
 import pickle
@@ -99,7 +99,8 @@ def load_pickled_data(fname, include_labels=False):
 
 
 def get_data_dir(hw_number):
-    return join('deepul', 'homeworks', f'hw{hw_number}', 'data')
+    return abspath(join(dirname(__file__), os.pardir, 'homeworks', f'hw{hw_number}', 'data'))
+    # return join('deepul', 'homeworks', f'hw{hw_number}', 'data')
 
 
 def quantize(images, n_bits):
